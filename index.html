@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Geological Section Viewer</title>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+        }
+        .viewer {
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+        #viewer2D, #viewer3D {
+            width: 800px;
+            height: 400px;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <label for="sectionSelect">Select Section:</label>
+            <select id="sectionSelect"></select>
+        </div>
+        <div id="viewer2D" class="viewer"></div>
+        <div id="viewer3D" class="viewer"></div>
+    </div>
+    <script src="viewer.js"></script>
+</body>
+</html>
