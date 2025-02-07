@@ -86,23 +86,33 @@ class GeologicalViewer {
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(width, height);
         this.renderer.setClearColor(0x000000, 1);
+        this.renderer.shadowMap.enabled = true;
         document.getElementById('viewer3D').appendChild(this.renderer.domElement);
 
-        // Add OrbitControls
+        // Add OrbitControls with enhanced settings
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
+        this.controls.screenSpacePanning = true;
+        this.controls.minDistance = 1;
+        this.controls.maxDistance = 5000;
+        this.controls.maxPolarAngle = Math.PI / 2;
         
-        // Add grid
-        const gridHelper = new THREE.GridHelper(1000, 20);
+        // Add grid with better visibility
+        const gridHelper = new THREE.GridHelper(2000, 20, 0x444444, 0x888888);
         this.scene.add(gridHelper);
 
-        // Add lighting
-        this.ambientLight = new THREE.AmbientLight(0x404040);
-        this.directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        this.directionalLight.position.set(1, 1, 1);
+        // Enhanced lighting
+        this.ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        this.directionalLight.position.set(1000, 1000, 1000);
+        this.directionalLight.castShadow = true;
         this.scene.add(this.ambientLight);
         this.scene.add(this.directionalLight);
+
+        // Add a hemisphere light for better ambient lighting
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        this.scene.add(hemiLight);
 
         // Set initial camera position
         this.resetCamera();
@@ -201,7 +211,8 @@ class GeologicalViewer {
             return;
         }
 
-        console.log('Processing section:', selectedSection);
+        // Scale factor to make the model more visible
+        const SCALE_FACTOR = 0.1;
 
         // Draw polygons
         sectionData.polygons.forEach((polygon, index) => {
@@ -217,7 +228,12 @@ class GeologicalViewer {
                         console.warn('Invalid vertex data:', p);
                         return null;
                     }
-                    return new THREE.Vector3(...p.vertex);
+                    // Scale down the coordinates
+                    return new THREE.Vector3(
+                        p.vertex[0] * SCALE_FACTOR,
+                        p.vertex[1] * SCALE_FACTOR,
+                        p.vertex[2] * SCALE_FACTOR
+                    );
                 }).filter(p => p !== null);
 
                 if (points.length < 3) {
@@ -240,12 +256,15 @@ class GeologicalViewer {
                 const zValues = points.map(p => p.z);
                 const minZ = Math.min(...zValues);
                 const maxZ = Math.max(...zValues);
-                const depth = Math.abs(maxZ - minZ) || 100; // Increased default depth
+                const depth = Math.max(Math.abs(maxZ - minZ), 10); // Minimum depth of 10
 
                 const extrudeSettings = {
                     depth: depth,
-                    bevelEnabled: false,
-                    steps: 1
+                    bevelEnabled: true,
+                    bevelThickness: 1,
+                    bevelSize: 1,
+                    bevelOffset: 0,
+                    bevelSegments: 1
                 };
 
                 const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
@@ -253,7 +272,8 @@ class GeologicalViewer {
                     color: `#${polygon.color || 'ff0000'}`,
                     side: THREE.DoubleSide,
                     transparent: true,
-                    opacity: 0.8
+                    opacity: 0.9,
+                    shininess: 30
                 });
 
                 const mesh = new THREE.Mesh(geometry, material);
@@ -275,7 +295,7 @@ class GeologicalViewer {
             // Calculate camera distance based on model size
             const maxDim = Math.max(size.x, size.y, size.z);
             const fov = this.camera.fov * (Math.PI / 180);
-            let cameraDistance = Math.abs(maxDim / Math.tan(fov / 2)) * 1.5;
+            let cameraDistance = Math.abs(maxDim / Math.tan(fov / 2)) * 2;
 
             // Position camera to look at model center
             this.camera.position.set(
